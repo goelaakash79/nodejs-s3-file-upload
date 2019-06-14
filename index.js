@@ -5,7 +5,7 @@ const fs = require('fs');
 const app = express();
 require('dotenv').config();
 
-// configuring aws
+// configuring aws access
 AWS.config.update({
   accessKeyId: process.env.access_key_id,
   secretAccessKey: process.env.secret_access_key
