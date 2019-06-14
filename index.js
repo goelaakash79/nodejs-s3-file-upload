@@ -1,54 +1,40 @@
 const express = require("express");
-// const passport = require('passport');
 const path = require('path');
-const bodyParser = require('body-parser');
-// const cookieParser = require('cookie-parser');
-// const session = require('express-session');
-// require('./config/passport')(passport);
-
+const AWS = require('aws-sdk');
+const fs = require('fs');
 const app = express();
-
-const cors = require('cors');
 require('dotenv').config();
-require('./config/dbconnection');
 
-app.use(cors());
-app.set('view engine', 'ejs');
-app.use(express.urlencoded({
-    extended: false
-}));
-app.use(express.static(path.join(__dirname, 'public')));
+// configuring aws
+AWS.config.update({
+  accessKeyId: process.env.access_key_id,
+  secretAccessKey: process.env.secret_access_key
+});
+const s3 = new AWS.S3();
 
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const filePath = "./data.txt";
 
-// app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// configuring parameters
+const params = {
+  Bucket: process.env.bucket_name,
+  Body: fs.createReadStream(filePath),
+  Key: "s3-nodejs-demo/" + Date.now() + "_" + path.basename(filePath)
+};
 
-// app.use(cookieParser());
-// app.use(session({
-//     secret: process.env.SECRET_KEY,
-//     resave: false,
-//     saveUninitialized: false
-// }));
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-// app.use((req, res, next) => {
-//     res.locals.user = req.user || null;
-//     next();
-// });
-
-app.use('/', require('./routes/index'));
-
-app.get('*', (req, res) => {
-    res.render('notfound');
+// uploading file to the bucket
+s3.upload(params, (err, data) => {
+  if (err) {
+    console.log("Error", err);
+  }
+  else if (data) {
+    console.log("Uploaded in:", data.Location);
+  }
 });
 
-app.listen(process.env.PORT, (err) => {
-    if (err) {
-        console.log("Error in running server");
-        return;
-    }
-    console.log(`Server is up and running on http://localhost:${process.env.PORT}`);
+app.listen(process.env.port, (err) => {
+  if (err) {
+    console.log("Error in running server");
+    return;
+  }
+  console.log(`Server is up and running on http://localhost:${process.env.port}`);
 });
